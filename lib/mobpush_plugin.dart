@@ -44,7 +44,7 @@ class MobpushPlugin {
    * 添加推送回调监听（接收自定义透传消息回调、接收通知消息回调、接收点击通知消息回调、接收别名或标签操作回调）
    */
   static addPushReceiver(EventHandler onEvent, EventHandler onError) {
-      _channelReciever.receiveBroadcastStream().listen(onEvent, onError: onError);
+      return _channelReciever.receiveBroadcastStream().listen(onEvent, onError: onError);
   }
 
   /*
