@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/services.dart';
@@ -7,7 +8,7 @@ typedef void EventHandler(dynamic event);
 
 class MobpushPlugin {
   static const MethodChannel _channel = const MethodChannel('mob.com/mobpush_plugin');
-  static EventChannel _channelReciever = const EventChannel('mobpush_receiver');
+  static EventChannel _channelReciever = const EventChannel('mobpush_receiver'); // only use for ios
 
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');
@@ -44,7 +45,17 @@ class MobpushPlugin {
    * 添加推送回调监听（接收自定义透传消息回调、接收通知消息回调、接收点击通知消息回调、接收别名或标签操作回调）
    */
   static addPushReceiver(EventHandler onEvent, EventHandler onError) {
+    if (Platform.isAndroid) {
+      return _channel.setMethodCallHandler((MethodCall call) async {
+        if (call.method == "PushReceiver") {
+          return onEvent(call.arguments);
+        } else {
+          return onError('Method not defined');
+        }
+      });
+    } else {
       return _channelReciever.receiveBroadcastStream().listen(onEvent, onError: onError);
+    }
   }
 
   /*

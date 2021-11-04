@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 
 import android.content.Intent;
+import android.util.Log;
+import android.widget.Toast;
 import com.mob.MobSDK;
 import com.mob.OperationCallback;
 import com.mob.mobpush_plugin.req.SimulateRequest;
@@ -14,7 +16,6 @@ import com.mob.tools.utils.ResHelper;
 import java.lang.ref.WeakReference;
 import java.util.*;
 
-import io.flutter.Log;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.Result;
@@ -28,6 +29,7 @@ import org.json.JSONException;
  */
 public class MobpushPlugin implements MethodCallHandler {
     private static Hashon hashon = new Hashon();
+    private static MethodChannel channel;
     private static MobPushReceiver mobPushReceiver;
     private static ArrayList<Result> setAliasCallback = new ArrayList<>();
     private static ArrayList<Result> getAliasCallback = new ArrayList<>();
@@ -41,10 +43,9 @@ public class MobpushPlugin implements MethodCallHandler {
      * Plugin registration.
      */
     public static void registerWith(Registrar registrar) {
-        final MethodChannel channel = new MethodChannel(registrar.messenger(), "mob.com/mobpush_plugin");
+        channel = new MethodChannel(registrar.messenger(), "mob.com/mobpush_plugin");
         channel.setMethodCallHandler(new MobpushPlugin());
         activityWeakReference = new WeakReference<>(registrar.activity());
-        MobpushReceiverPlugin.registerWith(registrar);
 
         createMobPushReceiver();
         MobPush.addPushReceiver(mobPushReceiver);
@@ -66,8 +67,8 @@ public class MobpushPlugin implements MethodCallHandler {
                 }
             });
         } else if (call.method.equals("removePushReceiver")) {
-            if (MobpushReceiverPlugin.getMobPushReceiver() != null) {
-                MobPush.removePushReceiver(MobpushReceiverPlugin.getMobPushReceiver());
+            if (mobPushReceiver != null) {
+                MobPush.removePushReceiver(mobPushReceiver);
             }
         } else if (call.method.equals("setClickNotificationToLaunchMainActivity")) {
             boolean enable = call.argument("enable");
@@ -206,17 +207,26 @@ public class MobpushPlugin implements MethodCallHandler {
         mobPushReceiver = new MobPushReceiver() {
             @Override
             public void onCustomMessageReceive(Context context, MobPushCustomMessage mobPushCustomMessage) {
-
+                HashMap<String, Object> map = new HashMap<String, Object>();
+                map.put("action", 0);
+                map.put("result", hashon.fromJson(hashon.fromObject(mobPushCustomMessage)));
+                channel.invokeMethod("PushReceiver", hashon.fromHashMap(map));
             }
 
             @Override
             public void onNotifyMessageReceive(Context context, MobPushNotifyMessage mobPushNotifyMessage) {
-
+                HashMap<String, Object> map = new HashMap<String, Object>();
+                map.put("action", 1);
+                map.put("result", hashon.fromJson(hashon.fromObject(mobPushNotifyMessage)));
+                channel.invokeMethod("PushReceiver", hashon.fromHashMap(map));
             }
 
             @Override
             public void onNotifyMessageOpenedReceive(Context context, MobPushNotifyMessage mobPushNotifyMessage) {
-
+                HashMap<String, Object> map = new HashMap<String, Object>();
+                map.put("action", 2);
+                map.put("result", hashon.fromJson(hashon.fromObject(mobPushNotifyMessage)));
+                channel.invokeMethod("PushReceiver", hashon.fromHashMap(map));
             }
 
             @Override
