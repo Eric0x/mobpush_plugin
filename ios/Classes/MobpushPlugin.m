@@ -6,7 +6,7 @@
 #import <MOBFoundation/MobSDK+Privacy.h>
 #import <MOBFoundation/MobSDK.h>
 
-@interface MobpushPlugin()<FlutterStreamHandler>
+@interface MobpushPlugin()
 // 是否是生产环境
 @property (nonatomic, assign) BOOL isPro;
 // 事件回调
@@ -16,19 +16,28 @@
 
 @end
 
-@implementation MobpushPlugin
-
-static NSString *const receiverStr = @"mobpush_receiver";
+@implementation MobpushPlugin {
+}
+//static NSString *const receiverStr = @"mobpush_receiver";
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
     FlutterMethodChannel* channel = [FlutterMethodChannel methodChannelWithName:@"mob.com/mobpush_plugin" binaryMessenger:[registrar messenger]];
-    MobpushPlugin* instance = [[MobpushPlugin alloc] init];
+    MobpushPlugin* instance = [[MobpushPlugin alloc] initWithChannel: channel];
     [registrar addMethodCallDelegate:instance channel:channel];
     
-    FlutterEventChannel* e_channel = [FlutterEventChannel eventChannelWithName:receiverStr binaryMessenger:[registrar messenger]];
-    [e_channel setStreamHandler:instance];
-    
     [instance addObserver];
+}
+
+- (instancetype)initWithChannel:(FlutterMethodChannel *)channel {
+    self = [super init];
+    
+    if (self) {
+        self.callBack = ^(id  _Nullable event) {
+            [channel invokeMethod:@"PushReceiver" arguments:event];
+        };
+    }
+    
+    return self;
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
@@ -329,16 +338,16 @@ static NSString *const receiverStr = @"mobpush_receiver";
 
 #pragma mark - FlutterStreamHandler Protocol
 
-- (FlutterError *)onListenWithArguments:(id)arguments eventSink:(FlutterEventSink)events
-{
-    self.callBack = events;
-    return nil;
-}
-
-- (FlutterError * _Nullable)onCancelWithArguments:(id _Nullable)arguments
-{
-    return nil;
-}
+//- (FlutterError *)onListenWithArguments:(id)arguments eventSink:(FlutterEventSink)events
+//{
+//    self.callBack = events;
+//    return nil;
+//}
+//
+//- (FlutterError * _Nullable)onCancelWithArguments:(id _Nullable)arguments
+//{
+//    return nil;
+//}
 
 #pragma mark - 监听消息通知
 

@@ -45,7 +45,7 @@ class MobpushPlugin {
    * 添加推送回调监听（接收自定义透传消息回调、接收通知消息回调、接收点击通知消息回调、接收别名或标签操作回调）
    */
   static addPushReceiver(EventHandler onEvent, EventHandler onError) {
-    if (Platform.isAndroid) {
+    // if (Platform.isAndroid) {
       return _channel.setMethodCallHandler((MethodCall call) async {
         if (call.method == "PushReceiver") {
           return onEvent(call.arguments);
@@ -53,9 +53,9 @@ class MobpushPlugin {
           return onError('Method not defined');
         }
       });
-    } else {
-      return _channelReciever.receiveBroadcastStream().listen(onEvent, onError: onError);
-    }
+    // } else {
+    //   return _channelReciever.receiveBroadcastStream().listen(onEvent, onError: onError);
+    // }
   }
 
   /*
