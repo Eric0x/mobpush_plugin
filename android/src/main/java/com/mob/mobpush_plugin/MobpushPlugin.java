@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import com.mob.MobSDK;
 import com.mob.OperationCallback;
 import com.mob.mobpush_plugin.req.SimulateRequest;
@@ -16,18 +17,22 @@ import com.mob.tools.utils.ResHelper;
 import java.lang.ref.WeakReference;
 import java.util.*;
 
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 
 /**
  * MobpushPlugin
  */
-public class MobpushPlugin implements MethodCallHandler {
+public class MobpushPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
     private static Hashon hashon = new Hashon();
     private static MethodChannel channel;
     private static MobPushReceiver mobPushReceiver;
@@ -39,17 +44,6 @@ public class MobpushPlugin implements MethodCallHandler {
     private static ArrayList<Result> deleteTagsCallback = new ArrayList<>();
     private static ArrayList<Result> cleanTagsCallback = new ArrayList<>();
     private static WeakReference<Activity> activityWeakReference;
-    /**
-     * Plugin registration.
-     */
-    public static void registerWith(Registrar registrar) {
-        channel = new MethodChannel(registrar.messenger(), "mob.com/mobpush_plugin");
-        channel.setMethodCallHandler(new MobpushPlugin());
-        activityWeakReference = new WeakReference<>(registrar.activity());
-
-        createMobPushReceiver();
-        MobPush.addPushReceiver(mobPushReceiver);
-    }
 
     @Override
     public void onMethodCall(MethodCall call, final MethodChannel.Result result) {
@@ -295,5 +289,41 @@ public class MobpushPlugin implements MethodCallHandler {
                 }
             }
         };
+    }
+
+    @Override
+    public void onAttachedToEngine(@NonNull @NotNull FlutterPluginBinding binding) {
+        channel = new MethodChannel(binding.getBinaryMessenger(), "mob.com/mobpush_plugin");
+        channel.setMethodCallHandler(new MobpushPlugin());
+
+        createMobPushReceiver();
+        MobPush.addPushReceiver(mobPushReceiver);
+    }
+
+    @Override
+    public void onDetachedFromEngine(@NonNull @NotNull FlutterPluginBinding binding) {
+        channel.setMethodCallHandler(null);
+    }
+
+
+
+    @Override
+    public void onAttachedToActivity(@NonNull @NotNull ActivityPluginBinding binding) {
+        activityWeakReference = new WeakReference<>(binding.getActivity());
+    }
+
+    @Override
+    public void onDetachedFromActivityForConfigChanges() {
+        activityWeakReference = null;
+    }
+
+    @Override
+    public void onReattachedToActivityForConfigChanges(@NonNull @NotNull ActivityPluginBinding binding) {
+        activityWeakReference = new WeakReference<>(binding.getActivity());
+    }
+
+    @Override
+    public void onDetachedFromActivity() {
+        activityWeakReference = null;
     }
 }
