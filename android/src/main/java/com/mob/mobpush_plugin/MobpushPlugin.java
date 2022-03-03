@@ -20,6 +20,7 @@ import java.util.*;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.Result;
@@ -35,7 +36,8 @@ import org.json.JSONException;
 public class MobpushPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
     private static Hashon hashon = new Hashon();
     private static MethodChannel channel;
-    private static MobPushReceiver mobPushReceiver;
+    private static EventChannel eventChannel;
+
     private static ArrayList<Result> setAliasCallback = new ArrayList<>();
     private static ArrayList<Result> getAliasCallback = new ArrayList<>();
     private static ArrayList<Result> getTagsCallback = new ArrayList<>();
@@ -61,8 +63,8 @@ public class MobpushPlugin implements FlutterPlugin, MethodCallHandler, Activity
                 }
             });
         } else if (call.method.equals("removePushReceiver")) {
-            if (mobPushReceiver != null) {
-                MobPush.removePushReceiver(mobPushReceiver);
+            if (MobpushReceiverPlugin.getMobPushReceiver() != null) {
+                MobPush.removePushReceiver(MobpushReceiverPlugin.getMobPushReceiver());
             }
         } else if (call.method.equals("setClickNotificationToLaunchMainActivity")) {
             boolean enable = call.argument("enable");
@@ -197,115 +199,21 @@ public class MobpushPlugin implements FlutterPlugin, MethodCallHandler, Activity
         }
     }
 
-    private static void createMobPushReceiver() {
-        mobPushReceiver = new MobPushReceiver() {
-            @Override
-            public void onCustomMessageReceive(Context context, MobPushCustomMessage mobPushCustomMessage) {
-                HashMap<String, Object> map = new HashMap<String, Object>();
-                map.put("action", 0);
-                map.put("result", hashon.fromJson(hashon.fromObject(mobPushCustomMessage)));
-                channel.invokeMethod("PushReceiver", hashon.fromHashMap(map));
-            }
-
-            @Override
-            public void onNotifyMessageReceive(Context context, MobPushNotifyMessage mobPushNotifyMessage) {
-                HashMap<String, Object> map = new HashMap<String, Object>();
-                map.put("action", 1);
-                map.put("result", hashon.fromJson(hashon.fromObject(mobPushNotifyMessage)));
-                channel.invokeMethod("PushReceiver", hashon.fromHashMap(map));
-            }
-
-            @Override
-            public void onNotifyMessageOpenedReceive(Context context, MobPushNotifyMessage mobPushNotifyMessage) {
-                HashMap<String, Object> map = new HashMap<String, Object>();
-                map.put("action", 2);
-                map.put("result", hashon.fromJson(hashon.fromObject(mobPushNotifyMessage)));
-                channel.invokeMethod("PushReceiver", hashon.fromHashMap(map));
-            }
-
-            @Override
-            public void onTagsCallback(Context context, String[] tags, int operation, int errorCode) {
-                HashMap<String, Object> map = new HashMap<String, Object>();
-                Result result = null;
-                // 0 获取， 1 设置， 2 删除，3 清空
-                switch (operation) {
-                    case 0:
-                        result = getTagsCallback.remove(0);
-                        map.put("res", tags == null ? new ArrayList<String>() : Arrays.asList(tags));
-                        map.put("error", "");
-                        map.put("errorCode", String.valueOf(errorCode));
-                        break;
-                    case 1:
-                        result = addTagsCallback.remove(0);
-                        map.put("res", errorCode == 0 ? "success" : "failed");
-                        map.put("error", "");
-                        map.put("errorCode", String.valueOf(errorCode));
-                        break;
-                    case 2:
-                        result = deleteTagsCallback.remove(0);
-                        map.put("res", errorCode == 0 ? "success" : "failed");
-                        map.put("error", "");
-                        map.put("errorCode", String.valueOf(errorCode));
-                        break;
-                    case 3:
-                        result = cleanTagsCallback.remove(0);
-                        map.put("res", errorCode == 0 ? "success" : "failed");
-                        map.put("error", "");
-                        map.put("errorCode", String.valueOf(errorCode));
-                        break;
-                }
-                if (result != null) {
-                    result.success(map);
-                }
-            }
-
-            @Override
-            public void onAliasCallback(Context context, String alias, int operation, int errorCode) {
-                HashMap<String, Object> map = new HashMap<String, Object>();
-                Result result = null;
-                // 0 获取， 1 设置， 2 删除
-                switch (operation) {
-                    case 0:
-                        result = getAliasCallback.remove(0);
-                        map.put("res", alias);
-                        map.put("error", "");
-                        map.put("errorCode", String.valueOf(errorCode));
-                        break;
-                    case 1:
-                        result = setAliasCallback.remove(0);
-                        map.put("res", errorCode == 0 ? "success" : "failed");
-                        map.put("error", "");
-                        map.put("errorCode", String.valueOf(errorCode));
-                        break;
-                    case 2:
-                        result = deleteAliasCallback.remove(0);
-                        map.put("res", errorCode == 0 ? "success" : "failed");
-                        map.put("error", "");
-                        map.put("errorCode", String.valueOf(errorCode));
-                        break;
-                }
-                if (result != null) {
-                    result.success(map);
-                }
-            }
-        };
-    }
-
     @Override
     public void onAttachedToEngine(@NonNull @NotNull FlutterPluginBinding binding) {
         channel = new MethodChannel(binding.getBinaryMessenger(), "mob.com/mobpush_plugin");
         channel.setMethodCallHandler(new MobpushPlugin());
 
-        createMobPushReceiver();
-        MobPush.addPushReceiver(mobPushReceiver);
+        eventChannel = new EventChannel(binding.getBinaryMessenger(), "mobpush_receiver");
+        eventChannel.setStreamHandler(new MobpushReceiverPlugin());
+//        createMobPushReceiver();
+//        MobPush.addPushReceiver(mobPushReceiver);
     }
 
     @Override
     public void onDetachedFromEngine(@NonNull @NotNull FlutterPluginBinding binding) {
         channel.setMethodCallHandler(null);
     }
-
-
 
     @Override
     public void onAttachedToActivity(@NonNull @NotNull ActivityPluginBinding binding) {

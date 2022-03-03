@@ -6,7 +6,7 @@
 #import <MOBFoundation/MobSDK+Privacy.h>
 #import <MOBFoundation/MobSDK.h>
 
-@interface MobpushPlugin()
+@interface MobpushPlugin() <FlutterStreamHandler>
 // 是否是生产环境
 @property (nonatomic, assign) BOOL isPro;
 // 事件回调
@@ -17,28 +17,36 @@
 @end
 
 @implementation MobpushPlugin {
+    FlutterEventSink _eventSink;
 }
 //static NSString *const receiverStr = @"mobpush_receiver";
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
     FlutterMethodChannel* channel = [FlutterMethodChannel methodChannelWithName:@"mob.com/mobpush_plugin" binaryMessenger:[registrar messenger]];
-    MobpushPlugin* instance = [[MobpushPlugin alloc] initWithChannel: channel];
+    MobpushPlugin* instance = [[MobpushPlugin alloc] init];
     [registrar addMethodCallDelegate:instance channel:channel];
+    
+    FlutterEventChannel* streamChannel =[FlutterEventChannel eventChannelWithName:@"mobpush_receiver"
+                                  binaryMessenger:[registrar messenger]];
+    [streamChannel setStreamHandler:instance];
     
     [instance addObserver];
 }
 
-- (instancetype)initWithChannel:(FlutterMethodChannel *)channel {
-    self = [super init];
-    
-    if (self) {
-        self.callBack = ^(id  _Nullable event) {
-            [channel invokeMethod:@"PushReceiver" arguments:event];
-        };
-    }
-    
-    return self;
-}
+//- (instancetype)initWithChannel:(FlutterMethodChannel *)channel {
+//    self = [super init];
+//
+//    if (self) {
+//        self.callBack = ^(id  _Nullable event) {
+//          dispatch_async(dispatch_get_main_queue(), ^{
+//              // Call the desired channel message here.
+//              [channel invokeMethod:@"PushReceiver" arguments:event];
+//          });
+//        };
+//    }
+//
+//    return self;
+//}
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
     if ([@"getPlatformVersion" isEqualToString:call.method]) {
@@ -338,16 +346,16 @@
 
 #pragma mark - FlutterStreamHandler Protocol
 
-//- (FlutterError *)onListenWithArguments:(id)arguments eventSink:(FlutterEventSink)events
-//{
-//    self.callBack = events;
-//    return nil;
-//}
-//
-//- (FlutterError * _Nullable)onCancelWithArguments:(id _Nullable)arguments
-//{
-//    return nil;
-//}
+- (FlutterError *)onListenWithArguments:(id)arguments eventSink:(FlutterEventSink)events
+{
+    self.callBack = events;
+    return nil;
+}
+
+- (FlutterError * _Nullable)onCancelWithArguments:(id _Nullable)arguments
+{
+    return nil;
+}
 
 #pragma mark - 监听消息通知
 
@@ -459,21 +467,23 @@
             [resultDict setObject:reslut forKey:@"result"];
         }
         // 回调结果
-        NSString *resultDictStr = [MOBFJson jsonStringFromObject:resultDict];
+//        NSString *resultDictStr = [MOBFJson jsonStringFromObject:resultDict];
+        
 
         if (self.callBack)
         {
-            self.callBack(resultDictStr);
+            self.callBack(resultDict);
+          
         }
         else
         {
             if(_tmps)
             {
-                [_tmps addObject:resultDictStr];
+                [_tmps addObject:resultDict];
             }
             else
             {
-                _tmps = @[resultDictStr].mutableCopy;
+                _tmps = @[resultDict].mutableCopy;
             }
         }
         

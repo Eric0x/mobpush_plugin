@@ -8,7 +8,7 @@ typedef void EventHandler(dynamic event);
 
 class MobpushPlugin {
   static const MethodChannel _channel = const MethodChannel('mob.com/mobpush_plugin');
-  static EventChannel _channelReciever = const EventChannel('mobpush_receiver'); // only use for ios
+  static EventChannel _channelReciever = const EventChannel('mobpush_receiver');
 
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');
@@ -21,7 +21,8 @@ class MobpushPlugin {
    * 上传隐私协议许可
    */
   static Future<bool> updatePrivacyPermissionStatus(bool agree) async {
-    return await _channel.invokeMethod("updatePrivacyPermissionStatus",{"status":agree});
+    return await _channel.invokeMethod(
+        "updatePrivacyPermissionStatus", {"status": agree});
   }
 
   /*
@@ -40,22 +41,13 @@ class MobpushPlugin {
     Map<String, dynamic> resMap = Map<String, dynamic>.from(ridMap);
     return resMap;
   }
-  
+
   /*
    * 添加推送回调监听（接收自定义透传消息回调、接收通知消息回调、接收点击通知消息回调、接收别名或标签操作回调）
    */
   static addPushReceiver(EventHandler onEvent, EventHandler onError) {
-    // if (Platform.isAndroid) {
-      return _channel.setMethodCallHandler((MethodCall call) async {
-        if (call.method == "PushReceiver") {
-          return onEvent(call.arguments);
-        } else {
-          return onError('Method not defined');
-        }
-      });
-    // } else {
-    //   return _channelReciever.receiveBroadcastStream().listen(onEvent, onError: onError);
-    // }
+    return _channelReciever.receiveBroadcastStream().listen(
+        onEvent, onError: onError);
   }
 
   /*
@@ -83,14 +75,15 @@ class MobpushPlugin {
    * 是否已停止接收推送
    */
   static Future<bool> isPushStopped() async {
-    return await _channel.invokeMethod('isPushStopped'); 
+    return await _channel.invokeMethod('isPushStopped');
   }
 
   /*
    * 设置别名
    */
-  static Future<Map<String, dynamic>> setAlias (String alias) async {
-    final Map aliasMap = await _channel.invokeMethod('setAlias', {"alias": alias});
+  static Future<Map<String, dynamic>> setAlias(String alias) async {
+    final Map aliasMap = await _channel.invokeMethod(
+        'setAlias', {"alias": alias});
     Map<String, dynamic> resMap = Map<String, dynamic>.from(aliasMap);
     return resMap;
   }
@@ -116,7 +109,7 @@ class MobpushPlugin {
   /*
    * 添加标签
    */
-  static Future<Map<String, dynamic>> addTags (List<String> tags) async {
+  static Future<Map<String, dynamic>> addTags(List<String> tags) async {
     final Map tagsMap = await _channel.invokeMethod('addTags', {"tags": tags});
     Map<String, dynamic> resMap = Map<String, dynamic>.from(tagsMap);
     return resMap;
@@ -134,8 +127,9 @@ class MobpushPlugin {
   /*
    * 删除标签
    */
-  static Future<Map<String, dynamic>> deleteTags (List<String> tags) async {
-    final Map tagsMap = await _channel.invokeMethod('deleteTags', {"tags": tags});
+  static Future<Map<String, dynamic>> deleteTags(List<String> tags) async {
+    final Map tagsMap = await _channel.invokeMethod(
+        'deleteTags', {"tags": tags});
     Map<String, dynamic> resMap = Map<String, dynamic>.from(tagsMap);
     return resMap;
   }
@@ -152,15 +146,18 @@ class MobpushPlugin {
   /*
    * 发送本地通知
    */
-  static Future<void> addLocalNotification(MobPushLocalNotification localNotification) async {
-    await _channel.invokeMethod('addLocalNotification', {"localNotification":json.encode(localNotification.toJson())});
+  static Future<void> addLocalNotification(
+      MobPushLocalNotification localNotification) async {
+    await _channel.invokeMethod('addLocalNotification',
+        {"localNotification": json.encode(localNotification.toJson())});
   }
 
   /*
    * 绑定手机号
    */
-  static Future<Map<String, dynamic>> bindPhoneNum (String phoneNum) async {
-    final Map phoneMap = await _channel.invokeMethod('bindPhoneNum', {"phoneNum": phoneNum});
+  static Future<Map<String, dynamic>> bindPhoneNum(String phoneNum) async {
+    final Map phoneMap = await _channel.invokeMethod(
+        'bindPhoneNum', {"phoneNum": phoneNum});
     Map<String, dynamic> resMap = Map<String, dynamic>.from(phoneMap);
     return resMap;
   }
@@ -172,8 +169,14 @@ class MobpushPlugin {
    * space：仅对定时消息有效，单位分钟，默认1分钟
    * extras: 附加数据，json字符串
    */
-  static Future<Map<String, dynamic>> send(int type, String content, int space, String extras) async {
-    final Map sendMap = await _channel.invokeMethod("send", {"type": type, "content": content, "space": space, "extrasMap": extras});
+  static Future<Map<String, dynamic>> send(int type, String content, int space,
+      String extras) async {
+    final Map sendMap = await _channel.invokeMethod("send", {
+      "type": type,
+      "content": content,
+      "space": space,
+      "extrasMap": extras
+    });
     Map<String, dynamic> resMap = Map<String, dynamic>.from(sendMap);
     return resMap;
   }
@@ -182,15 +185,18 @@ class MobpushPlugin {
   /*
    * 设置点击通知是否跳转默认页(仅andorid)
    */
-  static Future<void> setClickNotificationToLaunchMainActivity (bool enable) async {
-      await _channel.invokeMethod('setClickNotificationToLaunchMainActivity', {"enable": enable});
+  static Future<void> setClickNotificationToLaunchMainActivity(
+      bool enable) async {
+    await _channel.invokeMethod(
+        'setClickNotificationToLaunchMainActivity', {"enable": enable});
   }
 
   /*
    * 移除本地通知(仅andorid)
    */
   static Future<bool> removeLocalNotification(int notificationId) async {
-    final bool result = await _channel.invokeMethod('removeLocalNotification', {"notificationId": notificationId});
+    final bool result = await _channel.invokeMethod(
+        'removeLocalNotification', {"notificationId": notificationId});
     return result;
   }
 
@@ -206,20 +212,21 @@ class MobpushPlugin {
    * 设置通知栏icon，不设置默认取应用icon(仅andorid)
    */
   static Future<void> setNotifyIcon(String resId) async {
-   await _channel.invokeMethod('setNotifyIcon',{"iconRes": resId});
+    await _channel.invokeMethod('setNotifyIcon', {"iconRes": resId});
   }
 
   /*
    * 设置应用在前台时是否隐藏通知不进行显示，不设置默认不隐藏通知(仅andorid)
    */
-  static Future<void> setAppForegroundHiddenNotification (bool hidden) async {
-    await _channel.invokeMethod('setAppForegroundHiddenNotification', {"hidden": hidden});
+  static Future<void> setAppForegroundHiddenNotification(bool hidden) async {
+    await _channel.invokeMethod(
+        'setAppForegroundHiddenNotification', {"hidden": hidden});
   }
 
   /*
    * 设置是否显示角标(仅andorid)
    */
-  static Future<void> setShowBadge (bool show) async {
+  static Future<void> setShowBadge(bool show) async {
     await _channel.invokeMethod('setShowBadge', {"show": show});
   }
 
@@ -230,20 +237,26 @@ class MobpushPlugin {
    * @param endHour     结束时间[0~23]（小时）
    * @param endMinute   结束时间[0~59]（分钟）
    */
-  static Future<void> setSilenceTime(int startHour, int startMinute, int endHour, int endMinute) async {
-   await _channel.invokeMethod('setSilenceTime',
-        {"startHour": startHour, "startMinute": startMinute, "endHour": endHour, "endMinute": endMinute});
+  static Future<void> setSilenceTime(int startHour, int startMinute,
+      int endHour, int endMinute) async {
+    await _channel.invokeMethod('setSilenceTime',
+        {
+          "startHour": startHour,
+          "startMinute": startMinute,
+          "endHour": endHour,
+          "endMinute": endMinute
+        });
   }
 
   // iOS API
-  
+
   /*
    * 设置远程推送，向用户授权(仅 iOS)
    */
   static Future<void> setCustomNotification() async {
     await _channel.invokeMethod('setCustomNotification');
   }
-  
+
   /*
    * 设置远程推送环境 (仅 iOS)
    * @param isPro  开发环境 false, 线上环境 true
@@ -286,19 +299,23 @@ class MobpushPlugin {
   * 注册appkey和appsecret, (仅 iOS)
   * */
   static Future<void> registerApp(String appKey, String appSecret) async {
-    await _channel.invokeMethod('registerApp', {'appKey': appKey, 'appSecret': appSecret});
+    await _channel.invokeMethod(
+        'registerApp', {'appKey': appKey, 'appSecret': appSecret});
   }
-  
+
   /*
   * 注册appkey和appsecret, (仅 Android)
   * */
-  static Future<List<Map<String ,dynamic>>?> getIntentData() async {
-    dynamic intentData = await _channel.invokeMethod('getIntentData');
-    if (intentData != null) {
-      if (intentData is List) {
-        intentData = intentData.map((e) => Map<String, dynamic>.from(e)).toList();
+  static Future<List<Map<String, dynamic>>?> getIntentData() async {
+    if (Platform.isAndroid) {
+      dynamic intentData = await _channel.invokeMethod('getIntentData');
+      if (intentData != null) {
+        if (intentData is List) {
+          intentData = intentData.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
       }
+      return intentData;
     }
-    return intentData;
+    return [];
   }
 }
