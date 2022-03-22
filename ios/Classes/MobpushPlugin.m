@@ -6,7 +6,7 @@
 #import <MOBFoundation/MobSDK+Privacy.h>
 #import <MOBFoundation/MobSDK.h>
 
-@interface MobpushPlugin() <FlutterStreamHandler>
+@interface MobpushPlugin() <FlutterStreamHandler, FlutterApplicationLifeCycleDelegate>
 // 是否是生产环境
 @property (nonatomic, assign) BOOL isPro;
 // 事件回调
@@ -18,12 +18,15 @@
 
 @implementation MobpushPlugin {
     FlutterEventSink _eventSink;
+    bool _launchingAppFromNotification;
+    NSDictionary *_launchNotification;
 }
 //static NSString *const receiverStr = @"mobpush_receiver";
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
     FlutterMethodChannel* channel = [FlutterMethodChannel methodChannelWithName:@"mob.com/mobpush_plugin" binaryMessenger:[registrar messenger]];
     MobpushPlugin* instance = [[MobpushPlugin alloc] init];
+    [registrar addApplicationDelegate:instance];
     [registrar addMethodCallDelegate:instance channel:channel];
     
     FlutterEventChannel* streamChannel =[FlutterEventChannel eventChannelWithName:@"mobpush_receiver"
@@ -338,6 +341,9 @@
         NSString *appSecret = arguments[@"appSecret"];
         [MobSDK registerAppKey:appKey appSecret:appSecret];
     }
+    else if ([@"getIntentData" isEqualToString:call.method]) {
+        result(_launchNotification);
+    }
     else
     {
         result(FlutterMethodNotImplemented);
@@ -356,6 +362,19 @@
 {
     return nil;
 }
+
+#pragma mark - AppDelegate
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+  if (launchOptions != nil) {
+    UILocalNotification *pushData = [launchOptions objectForKey:UIApplicationLaunchOptionsLocalNotificationKey];
+    _launchingAppFromNotification = pushData != nil && pushData.userInfo != nil;
+    if (_launchingAppFromNotification) {
+        _launchNotification = pushData.userInfo;
+    }
+  }
+  return YES;
+}
+
 
 #pragma mark - 监听消息通知
 

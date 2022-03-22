@@ -318,4 +318,15 @@ class MobpushPlugin {
     }
     return [];
   }
+
+  /// 获取launch data 仅iOS
+  static Future<Map<String, dynamic>?> getIOSIntentData() async {
+    if (Platform.isIOS) {
+      dynamic intentData = await _channel.invokeMethod('getIntentData');
+      if (intentData != null) {
+        return Map<String, dynamic>.from(intentData);
+      }
+    }
+    return {};
+  }
 }
