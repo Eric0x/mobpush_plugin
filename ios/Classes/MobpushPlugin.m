@@ -309,6 +309,10 @@
     {
         [MobPush clearBadge];
     }
+    else if ([@"clearLocalNotifications" isEqualToString:call.method])
+    {   
+        [MobPush removeNotificationWithIdentifiers:nil];
+    }
     else if ([@"setAPNsShowForegroundType" isEqualToString:call.method])
     {
         NSDictionary *arguments = (NSDictionary *)call.arguments;
